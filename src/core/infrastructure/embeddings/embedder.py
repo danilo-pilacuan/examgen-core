@@ -6,7 +6,7 @@ El pipeline usa embeddings para:
   3. Deduplicación de ítems generados.
 
 Los embeddings se obtienen de un servicio OpenAI-compatible que corre en
-Docker local (apps/embedding-service) en http://localhost:8081/v1/embeddings.
+Docker local (projects/embedding-service) en http://localhost:8081/v1/embeddings.
 """
 from typing import Protocol
 

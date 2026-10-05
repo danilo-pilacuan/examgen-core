@@ -3,7 +3,7 @@
 Reutilizable por:
   - `core.domain.bank.material` (indexación de material RAG).
   - `scripts/index_material.py` (CLI operativo).
-  - `apps/exam-app` (subida de adjuntos propios, etapa 2).
+  - `projects/exam-app` (subida de adjuntos propios, etapa 2).
 
 Formatos soportados: PDF (PyMuPDF), DOCX (python-docx), PPTX (python-pptx),
 XLSX (openpyxl) y texto plano.
