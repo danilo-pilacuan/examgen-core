@@ -20,12 +20,12 @@ def escape_latex(text: str) -> str:
 
 
 def shuffle_question(item: GeneratedItem, rng: random.Random) -> GeneratedItem:
-    """Devuelve una copia del ítem con las opciones barajadas.
+    """Returns a copy of the item with shuffled options.
 
-    Mantiene la opción correcta marcada con `is_correct=True` y conserva el
-    orden de las demás. Solo aplica a opción múltiple / verdadero-falso.
+    Keeps the correct option marked with `is_correct=True` and preserves the
+    order of the others. Only applies to multiple choice / true-false.
     """
-    if item.question_type not in (QuestionType.OPCION_MULTIPLE, QuestionType.VERDADERO_FALSO):
+    if item.question_type not in (QuestionType.MULTIPLE_CHOICE, QuestionType.TRUE_FALSE):
         return item
     if not item.options:
         return item
@@ -44,13 +44,13 @@ def build_exam_versions(
     shuffle_options: bool = True,
     seed: int | None = None,
 ) -> list[list[GeneratedItem]]:
-    """Genera `num_versions` variantes del examen.
+    """Generates `num_versions` variants of the exam.
 
-    Cada versión tiene:
-      - Las preguntas en un orden distinto (si `shuffle_questions`).
-      - Las opciones de cada pregunta barajadas (si `shuffle_options`).
+    Each version has:
+      - Questions in a different order (if `shuffle_questions`).
+      - Options of each question shuffled (if `shuffle_options`).
 
-    Devuelve una lista de listas: versiones[i] = lista de ítems (ya barajados).
+    Returns a list of lists: versions[i] = list of items (already shuffled).
     """
     versions: list[list[GeneratedItem]] = []
     for v in range(num_versions):
@@ -73,9 +73,9 @@ def build_exam_versions(
 def render_item(item: GeneratedItem) -> str:
     statement = escape_latex(item.statement)
 
-    if item.question_type == QuestionType.RELLENO:
-        # Completar: el enunciado contiene un espacio en blanco. Usamos \fillin
-        # con la respuesta esperada (visible si \printanswers está activo).
+    if item.question_type == QuestionType.FILL_IN_BLANK:
+        # Fill in the blank: the statement contains a blank. We use \fillin
+        # with the expected answer (visible if \printanswers is active).
         answer = escape_latex(item.expected_answer)
         solution = escape_latex(item.solution_explanation)
         block = (
@@ -83,8 +83,8 @@ def render_item(item: GeneratedItem) -> str:
             f"\\fillin[{answer}]\n"
             f"\\begin{{solution}}\n{solution}\n\\end{{solution}}\n"
         )
-    elif item.question_type == QuestionType.TODAS_CORRECTAS:
-        # Marcar TODAS las correctas: se usa \multiplechoice (no \choices).
+    elif item.question_type == QuestionType.SELECT_ALL:
+        # Mark ALL correct options: uses \multiplechoice (not \choices).
         choices = "\n".join(
             f"    \\CorrectChoice {escape_latex(o.text)}" if o.is_correct
             else f"    \\choice {escape_latex(o.text)}"
@@ -95,7 +95,7 @@ def render_item(item: GeneratedItem) -> str:
             f"\\textbf{{Marque todas las opciones correctas.}}\n"
             f"\\begin{{checkboxes}}\n{choices}\n\\end{{checkboxes}}\n"
         )
-    elif item.question_type in (QuestionType.OPCION_MULTIPLE, QuestionType.VERDADERO_FALSO):
+    elif item.question_type in (QuestionType.MULTIPLE_CHOICE, QuestionType.TRUE_FALSE):
         choices = "\n".join(
             f"    \\CorrectChoice {escape_latex(o.text)}" if o.is_correct
             else f"    \\choice {escape_latex(o.text)}"
@@ -106,7 +106,7 @@ def render_item(item: GeneratedItem) -> str:
             f"\\begin{{choices}}\n{choices}\n\\end{{choices}}\n"
         )
     else:
-        # respuesta_corta / desarrollo
+        # respuesta_corta / desarrollo → short_answer / essay
         answer = escape_latex(item.expected_answer)
         solution = escape_latex(item.solution_explanation)
         block = (
@@ -138,22 +138,22 @@ def render_exam(
     boxed_points: bool = False,
     include_cover: bool = True,
 ) -> str | list[str]:
-    """Renderiza el examen a LaTeX.
+    """Renders the exam to LaTeX.
 
-    Si `num_versions > 1`, genera varias variantes (preguntas y opciones
-    barajadas, como AMC) y devuelve una LISTA de fuentes LaTeX (una por
-    versión). Si `num_versions == 1`, devuelve una sola cadena (para no
-    romper la compatibilidad con el pipeline existente).
+    If `num_versions > 1`, generates several variants (shuffled questions and
+    options, AMC style) and returns a LIST of LaTeX sources (one per version).
+    If `num_versions == 1`, returns a single string (to keep compatibility
+    with the existing pipeline).
 
-    Las opciones (`show_grading_table`, `boxed_points`, `include_cover`)
-    permiten configurar el template sin editarlo (base para la futura
-    interfaz web de templates).
+    The options (`show_grading_table`, `boxed_points`, `include_cover`)
+    allow configuring the template without editing it (base for a future
+    web template interface).
     """
     template_path = get_template_path(template_id)
-    # Las macros LaTeX \newcommand{...}{#1} contienen '{#', que Jinja
-    # interpretaría como inicio de comentario. Cambiamos SOLO el delimitador
-    # de comentario a uno sin colisión; los de variable {{ }} y bloque {% %}
-    # se mantienen (el template ya los usa).
+    # The LaTeX macros \newcommand{...}{#1} contain '{#', which Jinja
+    # would interpret as the start of a comment. We change ONLY the comment
+    # delimiter to a non-colliding one; variable {{ }} and block {% %}
+    # delimiters are kept (the template already uses them).
     env = Environment(
         loader=FileSystemLoader(template_path.parent),
         comment_start_string="<#",
@@ -163,11 +163,11 @@ def render_exam(
 
     base_kwargs = dict(
         subject_name=escape_latex(subject_name),
-        exam_title=escape_latex(f"Examen — {subject_name}"),
+        exam_title=escape_latex(f"Exam — {subject_name}"),
         department=escape_latex(department),
         exam_date=escape_latex(exam_date),
         exam_time=escape_latex(exam_time),
-        duration=escape_latex(f"{duration_minutes} minutos"),
+        duration=escape_latex(f"{duration_minutes} minutes"),
         examiner_name=escape_latex(examiner_name),
         instructions=escape_latex(instructions),
         print_answers=print_answers,
@@ -181,7 +181,7 @@ def render_exam(
         questions_block = "\n".join(render_item(item) for item in exam.items)
         return template.render(questions_block=questions_block, **base_kwargs)
 
-    # Múltiples versiones barajadas (estilo AMC, anti-copia).
+    # Multiple shuffled versions (AMC style, anti-copy).
     versions = build_exam_versions(
         exam.items,
         num_versions=num_versions,

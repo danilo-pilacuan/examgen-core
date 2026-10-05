@@ -1,12 +1,12 @@
-"""Extracción de texto multi-formato y gestión de data/inputs.
+"""Multi-format text extraction and data/inputs management.
 
-Reutilizable por:
-  - `core.domain.bank.material` (indexación de material RAG).
-  - `scripts/index_material.py` (CLI operativo).
-  - `projects/exam-app` (subida de adjuntos propios, etapa 2).
+Reusable by:
+  - `core.domain.bank.material` (RAG material indexing).
+  - `scripts/index_material.py` (operational CLI).
+  - `projects/exam-app` (own attachment upload, stage 2).
 
-Formatos soportados: PDF (PyMuPDF), DOCX (python-docx), PPTX (python-pptx),
-XLSX (openpyxl) y texto plano.
+Supported formats: PDF (PyMuPDF), DOCX (python-docx), PPTX (python-pptx),
+XLSX (openpyxl) and plain text.
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def _extract_pdf(path: str) -> str:
 
 
 def _extract_docx(path: str) -> str:
-    """Extrae texto de un .docx (párrafos + tablas)."""
+    """Extracts text from a .docx (paragraphs + tables)."""
     from docx import Document
 
     doc = Document(path)
@@ -66,7 +66,7 @@ def _extract_pptx(path: str) -> str:
 
 
 def _extract_xlsx(path: str) -> str:
-    """Extrae texto de un .xlsx (todas las hojas, celdas no vacías)."""
+    """Extracts text from a .xlsx (all sheets, non-empty cells)."""
     from openpyxl import load_workbook
 
     wb = load_workbook(path, read_only=True, data_only=True)
@@ -90,7 +90,7 @@ def _extract_text_file(path: str) -> str:
 
 
 def extract_file_text(path: str | Path) -> str:
-    """Extrae el texto de un archivo según su extensión."""
+    """Extracts the text of a file according to its extension."""
     path = str(path)
     ext = path.lower().rsplit(".", 1)[-1] if "." in path else ""
     if ext == "pdf":

@@ -1,12 +1,12 @@
-"""Capa de embeddings configurable.
+"""Configurable embeddings layer.
 
-El pipeline usa embeddings para:
-  1. Indexar el material de una materia (RAG).
-  2. Búsqueda por similitud semántica en pgvector.
-  3. Deduplicación de ítems generados.
+The pipeline uses embeddings for:
+  1. Indexing a subject's material (RAG).
+  2. Semantic similarity search in pgvector.
+  3. Deduplication of generated items.
 
-Los embeddings se obtienen de un servicio OpenAI-compatible que corre en
-Docker local (projects/embedding-service) en http://localhost:8081/v1/embeddings.
+Embeddings are obtained from an OpenAI-compatible service running in local
+Docker (projects/embedding-service) at http://localhost:8081/v1/embeddings.
 """
 from typing import Protocol
 
@@ -16,15 +16,15 @@ from core.config import settings
 
 
 class Embedder(Protocol):
-    """Interfaz de un generador de embeddings."""
+    """Interface of an embeddings generator."""
 
     def embed(self, texts: list[str]) -> list[list[float]]:
-        """Devuelve un vector por cada texto."""
+        """Returns one vector per text."""
         ...
 
 
 class RemoteEmbedder:
-    """Obtiene embeddings de un servicio OpenAI-compatible (Docker local)."""
+    """Gets embeddings from an OpenAI-compatible service (local Docker)."""
 
     def __init__(self, url: str = "", model: str = ""):
         self.url = url or settings.embedding_url
@@ -40,15 +40,15 @@ class RemoteEmbedder:
         )
         resp.raise_for_status()
         payload = resp.json()
-        # Ordenar por índice para mantener el orden de entrada
+        # Sort by index to preserve the input order
         data = sorted(payload["data"], key=lambda d: d["index"])
         return [d["embedding"] for d in data]
 
 
 def get_embedder() -> Embedder:
-    """Devuelve el embedder configurado (por ahora, siempre remoto)."""
+    """Returns the configured embedder (for now, always remote)."""
     return RemoteEmbedder()
 
 
-# Instancia singleton reutilizable
+# Reusable singleton instance
 embedder = get_embedder()

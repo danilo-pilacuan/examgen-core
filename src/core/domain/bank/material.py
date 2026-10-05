@@ -1,17 +1,17 @@
-"""Servicio para indexar material de una materia en la BD (RAG).
+"""Service for indexing subject material into the DB (RAG).
 
-Reutiliza la lógica de extracción de texto y chunking del script
-`scripts/index_material.py` y de los extractores de `src/agents/nodes.py`,
-pero expuesta como funciones reutilizables para que tanto el script CLI como
-las tools del agente conversacional puedan agregar material a una materia.
+Reuses the text-extraction and chunking logic of the `scripts/index_material.py`
+script and the extractors from `src/agents/nodes.py`, exposed as reusable
+functions so that both the CLI script and the conversational agent's tools can
+add material to a subject.
 
-Este módulo NO escribe a través de SQL directo en el banco de preguntas, pero
-sí inserta `MaterialChunk` (material de estudio, no preguntas), que es la
-operación legítima de "agregar material a una materia".
+This module does NOT write to the question bank via direct SQL, but it does
+insert `MaterialChunk` (study material, not questions), which is the
+legitimate "add material to a subject" operation.
 
-Además de indexar el texto en la BD, permite GUARDAR el archivo físico en el
-directorio de material de la materia (`data/inputs/<Materia>/...`) para que
-quede como parte del repositorio de material (igual que los apuntes).
+Besides indexing text into the DB, it allows SAVING the physical file into
+the subject's material directory (`data/inputs/<Subject>/...`) so it remains
+part of the material repository (like the notes).
 """
 from __future__ import annotations
 
@@ -35,13 +35,13 @@ from core.infrastructure.files.extract import (
 CHUNK_SIZE = 1500   # caracteres por chunk
 CHUNK_OVERLAP = 150  # solapamiento para no cortar ideas
 
-# Directorio raíz del material de las materias. Se resuelve por env var
-# (MATERIAL_ROOT) o por defecto a `data/inputs` relativo a la raíz del repo.
+# Root directory of the subjects' material. Resolved by env var
+# (MATERIAL_ROOT) or defaults to `data/inputs` relative to the repo root.
 DEFAULT_MATERIAL_ROOT = Path(__file__).resolve().parent.parent.parent / "data" / "inputs"
 
 
 def material_root() -> Path:
-    """Devuelve el directorio raíz del material (configurable por env)."""
+    """Returns the material root directory (configurable by env)."""
     import os
 
     root = os.environ.get("MATERIAL_ROOT", "")
@@ -49,17 +49,16 @@ def material_root() -> Path:
 
 
 def subject_folder_name(name: str) -> str:
-    """Normaliza el nombre de una materia a un nombre de carpeta seguro.
+    """Normalizes a subject name into a safe folder name.
 
-    Ej: "Economía Aplicada" -> "Economia_Aplicada"
-        "Inglés Técnico"    -> "Ingles_Tecnico"
+    Example: "Applied Economics" -> "Applied_Economics"
 
-    Elimina acentos, espacios -> guiones bajos, y caracteres no alfanuméricos.
+    Removes accents, spaces -> underscores, and non-alphanumeric characters.
     """
-    # Normalizar Unicode y eliminar marcas de acentuación.
+    # Normalize Unicode and remove accent marks.
     text = unicodedata.normalize("NFKD", name)
     text = "".join(c for c in text if not unicodedata.combining(c))
-    # Espacios y separadores -> guión bajo; quitar caracteres no seguros.
+    # Spaces and separators -> underscore; remove unsafe characters.
     text = re.sub(r"[\s]+", "_", text)
     text = re.sub(r"[^A-Za-z0-9_\-.]", "", text)
     return text.strip("_")
@@ -70,12 +69,12 @@ def save_file_to_subject_folder(
     filename: str,
     subject_name: str,
 ) -> Path:
-    """Guarda el archivo físico en el directorio de material de la materia.
+    """Saves the physical file in the subject's material directory.
 
-    Crea `data/inputs/<SubjectFolder>/<filename>` si no existe y copia los
-    bytes del archivo. Devuelve la ruta guardada.
+    Creates `data/inputs/<SubjectFolder>/<filename>` if it doesn't exist and
+    copies the file bytes. Returns the saved path.
 
-    Si el archivo ya existe, añade un sufijo numérico para no sobrescribirlo.
+    If the file already exists, adds a numeric suffix to avoid overwriting.
     """
     folder = material_root() / subject_folder_name(subject_name)
     folder.mkdir(parents=True, exist_ok=True)
@@ -83,7 +82,7 @@ def save_file_to_subject_folder(
     # Nombre de archivo seguro.
     safe_name = Path(filename).name or "archivo"
     dest = folder / safe_name
-    # Evitar sobrescribir: añadir sufijo si ya existe.
+    # Avoid overwriting: add a suffix if it already exists.
     if dest.exists():
         stem, suffix = dest.stem, dest.suffix
         i = 1
@@ -112,7 +111,7 @@ def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) 
 
 
 def extract_file_text(path: str | Path) -> str:
-    """Extrae el texto de un archivo según su extensión."""
+    """Extracts the text of a file according to its extension."""
     path = str(path)
     ext = path.lower().rsplit(".", 1)[-1] if "." in path else ""
     if ext == "pdf":
@@ -155,17 +154,17 @@ def index_text_for_subject(
     """Indexa un texto (material) en `material_chunks` de una materia.
 
     Args:
-        text: contenido del material (ya extraído).
+        text: material content (already extracted).
         subject_id: id de la materia destino.
         source_label: etiqueta de origen (ej. nombre del archivo).
         clear_previous: si True, borra los chunks previos de esa fuente.
 
     Returns:
-        dict con estadísticas (chunks_guardados, materia, etc.).
+        dict with stats (chunks_saved, subject, etc.).
     """
     chunks = chunk_text(text)
     if not chunks:
-        return {"chunks_guardados": 0, "mensaje": "No se pudo extraer texto del material."}
+        return {"chunks_saved": 0, "message": "Could not extract text from the material."}
 
     # Generar embeddings en lotes.
     vectors: list[list[float]] = []
@@ -178,7 +177,7 @@ def index_text_for_subject(
     try:
         subject = db.get(Subject, uuid.UUID(subject_id))
         if subject is None:
-            return {"chunks_guardados": 0, "mensaje": f"No existe la materia {subject_id}"}
+            return {"chunks_saved": 0, "message": f"Subject {subject_id} does not exist"}
 
         if clear_previous:
             db.query(MaterialChunk).filter(
@@ -196,10 +195,10 @@ def index_text_for_subject(
             ))
         db.commit()
         return {
-            "chunks_guardados": len(chunks),
-            "materia": subject.name,
+            "chunks_saved": len(chunks),
+            "subject": subject.name,
             "subject_id": str(subject.id),
-            "fuente": source_label,
+            "source": source_label,
         }
     finally:
         db.close()
@@ -213,11 +212,11 @@ def index_file_for_subject(
     """Extrae e indexa un archivo local en la materia destino."""
     file_path = Path(file_path)
     if not file_path.exists():
-        return {"chunks_guardados": 0, "mensaje": f"No existe el archivo: {file_path}"}
+        return {"chunks_saved": 0, "message": f"File does not exist: {file_path}"}
     try:
         text = extract_file_text(file_path)
     except Exception as e:  # noqa: BLE001
-        return {"chunks_guardados": 0, "mensaje": f"Error al extraer el archivo: {str(e)[:200]}"}
+        return {"chunks_saved": 0, "message": f"Error extracting the file: {str(e)[:200]}"}
     return index_text_for_subject(
         text,
         subject_id,

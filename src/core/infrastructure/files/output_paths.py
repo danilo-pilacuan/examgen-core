@@ -1,12 +1,12 @@
-"""Rutas de salida compartidas (PDFs de exámenes, exportaciones CSV/XLSX).
+"""Shared output paths (exam PDFs, CSV/XLSX exports).
 
-El directorio de salida se comparte con el latex-compiler vía volumen y es
-servido por exam-app en `GET /output/{filename}`.
+The output directory is shared with the latex-compiler via a volume and is
+served by exam-app at `GET /output/{filename}`.
 
-Resolución (en orden):
-  1. `EXAM_OUTPUT_DIR` (override explícito).
-  2. `/app/output` (contenedor: volumen compartido con latex-compiler).
-  3. `data/agent_outputs` relativo a la raíz del repo (desarrollo local).
+Resolution (in order):
+  1. `EXAM_OUTPUT_DIR` (explicit override).
+  2. `/app/output` (container: shared volume with latex-compiler).
+  3. `data/agent_outputs` relative to the repo root (local development).
 """
 from __future__ import annotations
 
@@ -15,19 +15,19 @@ from pathlib import Path
 
 
 def _repo_root_candidates() -> list[Path]:
-    """Raíces candidatas del repo (dev local), desde la ubicación de este archivo."""
+    """Candidate repo roots (local dev), from this file's location."""
     here = Path(__file__).resolve()
     return [p / "data" / "agent_outputs" for p in here.parents if (p / "data").exists()]
 
 
 _CANDIDATE_OUTPUT = [
-    Path("/app/output"),  # contenedor (volumen compartido con latex-compiler)
-    *_repo_root_candidates(),  # desarrollo local (data/ existe en la raíz)
+    Path("/app/output"),  # container (shared volume with latex-compiler)
+    *_repo_root_candidates(),  # local development (data/ exists at the root)
 ]
 
 
 def get_output_dir() -> Path:
-    """Devuelve el directorio de salida, creándolo si no existe."""
+    """Returns the output directory, creating it if it doesn't exist."""
     env = os.environ.get("EXAM_OUTPUT_DIR", "")
     if env:
         out = Path(env)

@@ -19,7 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema: añade tabla material_chunks para el RAG."""
+    """Upgrade schema: adds material_chunks table for RAG."""
     op.create_table('material_chunks',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('subject_id', sa.UUID(), nullable=False),

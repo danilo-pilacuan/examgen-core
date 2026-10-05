@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mvp-core"
 version = "0.1.0"
-description = "Shared kernel del generador de exámenes: modelos, banco, migraciones, clientes"
+description = "Shared kernel of the exam generator: models, bank, migrations, clients"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.10.0",

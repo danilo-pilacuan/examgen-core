@@ -5,11 +5,12 @@ Revises: b2c3d4e5f6a7
 Create Date: 2026-09-07
 
 Agrega a `generated_questions`:
-  - Estructura completa del ítem (question_type, options, expected_answer,
-    solution_explanation, subtopic, points) para no perder información al persistir.
-  - Campos de verificación humana e IA (verified_by_human, verified_by_ai,
+  - Full item structure (question_type, options, expected_answer,
+    solution_explanation, subtopic, points) to avoid losing information on
+    persistence.
+  - Human and AI verification fields (verified_by_human, verified_by_ai,
     ai_review_notes, ai_review_priority).
-  - Campos de procedencia/auditoría (source, created_by).
+  - Provenance/audit fields (source, created_by).
 """
 from typing import Sequence, Union
 

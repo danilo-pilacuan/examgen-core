@@ -1,15 +1,16 @@
-"""Service layer de acceso al banco de preguntas.
+"""Service layer for question bank access.
 
-TODAS las operaciones de escritura sobre `generated_questions` deben pasar
-por este módulo. El agente NUNCA ejecuta SQL directo.
+ALL write operations on `generated_questions` must go through this module.
+The agent NEVER executes direct SQL.
 
-Reglas de seguridad (requisito de Felipe):
-  - `create_question()`: el agente puede crear preguntas.
-  - `update_question()` / `delete_question()`: BLOQUEADAS si la pregunta
-    ya fue `verified_by_human=True` (una pregunta verificada por un humano
-    no debe poder ser modificada por el agente).
-  - `set_human_verification()`: SOLO la invoca el paso de confirmación
-    humana explícito del chat (human-in-the-loop), nunca el agente autónomo.
+Security rules (Felipe's requirement):
+  - `create_question()`: the agent can create questions.
+  - `update_question()` / `delete_question()`: BLOCKED if the question is
+    already `verified_by_human=True` (a human-verified question must not be
+    modifiable by the agent).
+  - `set_human_verification()`: ONLY invoked by the explicit human
+    confirmation step of the chat (human-in-the-loop), never by the
+    autonomous agent.
 """
 from __future__ import annotations
 
@@ -24,20 +25,20 @@ from core.domain.models import GeneratedQuestion
 
 
 class SecurityError(Exception):
-    """Se lanza cuando el agente intenta modificar/borrar una pregunta
-    verificada por humano (o cualquier operación no permitida)."""
+    """Raised when the agent tries to modify/delete a human-verified question
+    (or any other non-permitted operation)."""
 
 
 def _get_question(db: Session, question_id: str | uuid.UUID) -> GeneratedQuestion:
     qid = uuid.UUID(str(question_id))
     q = db.get(GeneratedQuestion, qid)
     if q is None:
-        raise SecurityError(f"Pregunta no encontrada: {qid}")
+        raise SecurityError(f"Question not found: {qid}")
     return q
 
 
 def get_question(question_id: str | uuid.UUID, db: Session | None = None) -> GeneratedQuestion | None:
-    """Lectura de una pregunta por id. Permite pasar una sesión propia."""
+    """Reads a question by id. Allows passing an own session."""
     own = db is None
     if own:
         db = SessionLocal()
@@ -57,8 +58,8 @@ def list_questions(
     limit: int = 50,
     db: Session | None = None,
 ) -> list[GeneratedQuestion]:
-    """Lista preguntas del banco con filtros opcionales (para recuperar del
-    banco sin generar nuevas)."""
+    """Lists bank questions with optional filters (to retrieve from the bank
+    without generating new ones)."""
     own = db is None
     if own:
         db = SessionLocal()
@@ -100,8 +101,8 @@ def create_question(
     ai_review_priority: str | None = None,
     db: Session | None = None,
 ) -> GeneratedQuestion:
-    """Crea una pregunta. El agente puede crear; la verificación humana se
-    marca después en `set_human_verification`."""
+    """Creates a question. The agent can create; human verification is
+    set later in `set_human_verification`."""
     own = db is None
     if own:
         db = SessionLocal()
@@ -141,10 +142,10 @@ def update_question(
     fields: dict[str, Any],
     db: Session | None = None,
 ) -> GeneratedQuestion:
-    """Actualiza una pregunta.
+    """Updates a question.
 
-    Seguridad: si `verified_by_human=True`, se lanza `SecurityError`. El
-    agente no puede modificar preguntas verificadas por un humano.
+    Security: if `verified_by_human=True`, raises `SecurityError`. The
+    agent cannot modify human-verified questions.
     """
     own = db is None
     if own:
@@ -153,11 +154,11 @@ def update_question(
         q = _get_question(db, question_id)
         if q.verified_by_human:
             raise SecurityError(
-                f"La pregunta {q.id} está verificada por humano y no puede modificarse."
+                f"Question {q.id} is verified by human and cannot be modified."
             )
         for key, value in fields.items():
             if not hasattr(q, key):
-                raise SecurityError(f"Campo desconocido: {key}")
+                raise SecurityError(f"Unknown field: {key}")
             setattr(q, key, value)
         db.commit()
         db.refresh(q)
@@ -168,9 +169,9 @@ def update_question(
 
 
 def delete_question(question_id: str | uuid.UUID, db: Session | None = None) -> None:
-    """Elimina una pregunta.
+    """Deletes a question.
 
-    Seguridad: si `verified_by_human=True`, se lanza `SecurityError`.
+    Security: if `verified_by_human=True`, raises `SecurityError`.
     """
     own = db is None
     if own:
@@ -179,7 +180,7 @@ def delete_question(question_id: str | uuid.UUID, db: Session | None = None) -> 
         q = _get_question(db, question_id)
         if q.verified_by_human:
             raise SecurityError(
-                f"La pregunta {q.id} está verificada por humano y no puede eliminarse."
+                f"Question {q.id} is verified by human and cannot be deleted."
             )
         db.delete(q)
         db.commit()
@@ -193,10 +194,10 @@ def set_human_verification(
     verified: bool = True,
     db: Session | None = None,
 ) -> GeneratedQuestion:
-    """Marca una pregunta como verificada por un humano.
+    """Marks a question as verified by a human.
 
-    ⚠️ Este método SOLO debe invocarse desde el paso de confirmación humana
-    explícito del chat (human-in-the-loop). El agente autónomo no lo llama.
+    ⚠️ This method must ONLY be invoked from the explicit human confirmation
+    step of the chat (human-in-the-loop). The autonomous agent does not call it.
     """
     own = db is None
     if own:

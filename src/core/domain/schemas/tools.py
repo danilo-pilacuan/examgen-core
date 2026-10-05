@@ -1,23 +1,22 @@
-"""Schemas Pydantic de ENTRADA para las tools del agente conversacional.
+"""Pydantic INPUT schemas for the conversational agent's tools.
 
-Complementa la validación de SALIDAS del LLM (que ya se hace con
-`with_structured_output(GeneratedItem)` en `src/agents/nodes.py`,
-`src/agents/verifier.py` y `src/agents/conversational/tools.py`).
+Complements the LLM OUTPUT validation (already done with
+`with_structured_output(GeneratedItem)` in `src/agents/nodes.py`,
+`src/agents/verifier.py` and `src/agents/conversational/tools.py`).
 
-Aquí se valida lo que el LLM pasa como ARGUMENTOS de las tools
-(tool-calling). Sin esto, el LLM puede pasar valores inválidos
-(ej. `difficulty="facilísimo"`, `limit=0`, `num_versions=1000`) que
-antes se guardaban tal cual en la base de datos.
+Here we validate what the LLM passes as tool ARGUMENTS (tool-calling).
+Without this, the LLM could pass invalid values (e.g. `difficulty="super_hard"`,
+`limit=0`, `num_versions=1000`) that used to be stored as-is in the database.
 
-Mecanismo: `@tool(args_schema=...)` de LangChain. El JSON schema del
-modelo Pydantic viaja al LLM (guía el tool-calling) y Pydantic valida
-los args en cada invocación, lanzando `pydantic.ValidationError` si no
-cumplen. Ese error se captura en `_call_tools_node`
-(`src/agents/conversational/graph.py`) y se devuelve al LLM como
-ToolMessage amigable para que corrija y reintente.
+Mechanism: LangChain's `@tool(args_schema=...)`. The Pydantic model's JSON
+schema travels to the LLM (guiding tool-calling) and Pydantic validates the
+args on every invocation, raising `pydantic.ValidationError` when they don't
+comply. That error is caught in `_call_tools_node`
+(`src/agents/conversational/graph.py`) and returned to the LLM as a friendly
+ToolMessage so it can correct and retry.
 
-Reutiliza los enums y modelos de `src/schemas/exam.py` (fuente única
-de verdad del dominio).
+Reuses the enums and models from `src/schemas/exam.py` (single source of
+truth of the domain).
 """
 from __future__ import annotations
 
@@ -29,46 +28,46 @@ from core.domain.schemas.exam import AnswerOption, Difficulty, QuestionType
 
 
 # ---------------------------------------------------------------------------
-# Helpers de descripción (viajan al LLM en el JSON schema de la tool)
+# Description helpers (travel to the LLM in the tool's JSON schema)
 # ---------------------------------------------------------------------------
 _TOPIC_DESC = (
-    "Tema de la pregunta (ej. 'Regresión Lineal', 'Ley de la demanda'). "
-    "Debe ser un tema académico del material de las materias."
+    "Topic of the question (e.g. 'Linear Regression', 'Law of Demand'). "
+    "Must be an academic topic from the subjects' material."
 )
-_DIFFICULTY_DESC = "Dificultad de la pregunta: 'facil', 'medio' o 'dificil'."
+_DIFFICULTY_DESC = "Difficulty of the question: 'easy', 'medium' or 'hard'."
 
 
 # ---------------------------------------------------------------------------
-# Formato de salida en tabla (listar preguntas)
+# Table output format (list questions)
 # ---------------------------------------------------------------------------
 class TableColumn(str, Enum):
-    """Columnas disponibles para mostrar preguntas en formato tabla.
+    """Columns available to display questions in table format.
 
-    El LLM elige cuáles incluir con `columns`; si no indica ninguna se usa
-    el set por defecto. Los nombres coinciden con los campos de
-    `GeneratedQuestion` (src/database/models.py).
+    The LLM chooses which ones to include with `columns`; if none are given,
+    the default set is used. Names match the fields of `GeneratedQuestion`
+    (src/database/models.py).
     """
 
-    N = "n"                          # número de fila
-    ID = "id"                        # id (UUID) de la pregunta
-    TOPIC = "topic"                  # tema
-    SUBTOPIC = "subtopic"            # subtema
-    BLOOM_LEVEL = "bloom_level"      # nivel de Bloom
-    DIFFICULTY = "difficulty"        # dificultad
-    QUESTION_TYPE = "question_type"  # tipo de pregunta
-    QUESTION_TEXT = "question_text"  # enunciado
-    EXPECTED_ANSWER = "expected_answer"  # respuesta esperada
-    OPTIONS = "options"              # opciones de respuesta (opcion_multiple, etc.)
-    SOLUTION_EXPLANATION = "solution_explanation"  # solución / justificación
-    POINTS = "points"                # puntaje
-    VERIFIED_BY_HUMAN = "verified_by_human"  # verificado por humano
-    VERIFIED_BY_AI = "verified_by_ai"        # verificado por IA
-    AI_REVIEW_PRIORITY = "ai_review_priority"  # prioridad de revisión IA
-    SOURCE = "source"                # procedencia (generated|chat|bank)
-    CREATED_AT = "created_at"        # fecha de creación
+    N = "n"                          # row number
+    ID = "id"                        # question id (UUID)
+    TOPIC = "topic"                  # topic
+    SUBTOPIC = "subtopic"            # subtopic
+    BLOOM_LEVEL = "bloom_level"      # Bloom level
+    DIFFICULTY = "difficulty"        # difficulty
+    QUESTION_TYPE = "question_type"  # question type
+    QUESTION_TEXT = "question_text"  # statement
+    EXPECTED_ANSWER = "expected_answer"  # expected answer
+    OPTIONS = "options"              # answer options (multiple_choice, etc.)
+    SOLUTION_EXPLANATION = "solution_explanation"  # solution / justification
+    POINTS = "points"                # score
+    VERIFIED_BY_HUMAN = "verified_by_human"  # verified by human
+    VERIFIED_BY_AI = "verified_by_ai"        # verified by AI
+    AI_REVIEW_PRIORITY = "ai_review_priority"  # AI review priority
+    SOURCE = "source"                # provenance (generated|chat|bank)
+    CREATED_AT = "created_at"        # creation date
 
 
-# Set por defecto si el LLM no especifica columnas.
+# Default set if the LLM doesn't specify columns.
 DEFAULT_TABLE_COLUMNS: list[TableColumn] = [
     TableColumn.N,
     TableColumn.TOPIC,
@@ -78,137 +77,137 @@ DEFAULT_TABLE_COLUMNS: list[TableColumn] = [
     TableColumn.VERIFIED_BY_HUMAN,
 ]
 
-# Etiquetas legibles de cada columna (encabezados de la tabla).
+# Human-readable labels for each column (table headers).
 COLUMN_LABELS: dict[TableColumn, str] = {
     TableColumn.N: "#",
     TableColumn.ID: "Id",
-    TableColumn.TOPIC: "Tema",
-    TableColumn.SUBTOPIC: "Subtema",
+    TableColumn.TOPIC: "Topic",
+    TableColumn.SUBTOPIC: "Subtopic",
     TableColumn.BLOOM_LEVEL: "Bloom",
-    TableColumn.DIFFICULTY: "Dificultad",
-    TableColumn.QUESTION_TYPE: "Tipo",
-    TableColumn.QUESTION_TEXT: "Pregunta",
-    TableColumn.EXPECTED_ANSWER: "Respuesta",
-    TableColumn.OPTIONS: "Opciones",
-    TableColumn.SOLUTION_EXPLANATION: "Solución",
-    TableColumn.POINTS: "Puntos",
-    TableColumn.VERIFIED_BY_HUMAN: "Verif. humano",
-    TableColumn.VERIFIED_BY_AI: "Verif. IA",
-    TableColumn.AI_REVIEW_PRIORITY: "Prioridad IA",
-    TableColumn.SOURCE: "Origen",
-    TableColumn.CREATED_AT: "Creada",
+    TableColumn.DIFFICULTY: "Difficulty",
+    TableColumn.QUESTION_TYPE: "Type",
+    TableColumn.QUESTION_TEXT: "Question",
+    TableColumn.EXPECTED_ANSWER: "Answer",
+    TableColumn.OPTIONS: "Options",
+    TableColumn.SOLUTION_EXPLANATION: "Solution",
+    TableColumn.POINTS: "Points",
+    TableColumn.VERIFIED_BY_HUMAN: "Human verif.",
+    TableColumn.VERIFIED_BY_AI: "AI verif.",
+    TableColumn.AI_REVIEW_PRIORITY: "AI priority",
+    TableColumn.SOURCE: "Source",
+    TableColumn.CREATED_AT: "Created",
 }
 
 
 class _StrictModel(BaseModel):
-    """Base común: rechaza campos extra que el LLM invente."""
+    """Common base: rejects extra fields the LLM may invent."""
 
     model_config = ConfigDict(extra="forbid")
 
 
 # ---------------------------------------------------------------------------
-# Lectura
+# Read
 # ---------------------------------------------------------------------------
-class ListarMateriasInput(_StrictModel):
-    """Input de `listar_materias` (sin argumentos)."""
+class ListSubjectsInput(_StrictModel):
+    """Input of `list_subjects` (no arguments)."""
 
 
-class BuscarPreguntasInput(_StrictModel):
-    """Input de `buscar_preguntas`."""
+class SearchQuestionsInput(_StrictModel):
+    """Input of `search_questions`."""
 
-    subject_id: str = Field(..., description="Id de la materia (UUID)")
+    subject_id: str = Field(..., description="Subject id (UUID)")
     topic: str | None = Field(
-        default=None, description="Filtro opcional por tema exacto"
+        default=None, description="Optional filter by exact topic"
     )
     limit: int = Field(
-        default=20, ge=1, le=100, description="Nº máximo de preguntas a devolver (1-100)"
+        default=20, ge=1, le=100, description="Max number of questions to return (1-100)"
     )
     columns: list[TableColumn] | None = Field(
         default=None,
         description=(
-            "Columnas a mostrar en la tabla (opcional). Valores: 'n', 'id', "
+            "Columns to show in the table (optional). Values: 'n', 'id', "
             "'topic', 'subtopic', 'bloom_level', 'difficulty', 'question_type', "
             "'question_text', 'expected_answer', 'points', 'verified_by_human', "
             "'verified_by_ai', 'ai_review_priority', 'source', 'created_at'. "
-            "Si se omite se usa el set por defecto. Elige las columnas que pida "
-            "el profesor (ej. 'dame id, tema y dificultad en tabla')."
+            "If omitted the default set is used. Choose the columns the "
+            "professor asks for (e.g. 'give me id, topic and difficulty in a table')."
         ),
     )
 
 
-class ListarMaterialInput(_StrictModel):
-    """Input de `listar_material_materia`."""
+class ListMaterialInput(_StrictModel):
+    """Input of `list_subject_material`."""
 
-    subject_id: str = Field(..., description="Id de la materia (UUID)")
+    subject_id: str = Field(..., description="Subject id (UUID)")
 
 
 # ---------------------------------------------------------------------------
-# Generación / guardado de preguntas
+# Question generation / saving
 # ---------------------------------------------------------------------------
-class GenerarPreguntaInput(_StrictModel):
-    """Input de `generar_pregunta`."""
+class GenerateQuestionInput(_StrictModel):
+    """Input of `generate_question`."""
 
-    subject_id: str = Field(..., description="Id de la materia (UUID)")
-    subject_name: str = Field(..., description="Nombre de la materia")
+    subject_id: str = Field(..., description="Subject id (UUID)")
+    subject_name: str = Field(..., description="Name of the subject")
     topic: str = Field(..., description=_TOPIC_DESC)
     difficulty: Difficulty = Field(
-        default=Difficulty.MEDIO, description=_DIFFICULTY_DESC
+        default=Difficulty.MEDIUM, description=_DIFFICULTY_DESC
     )
 
 
 class AnswerOptionIn(AnswerOption):
-    """Opción de respuesta que llega del LLM en tool-calling.
+    """Answer option arriving from the LLM via tool-calling.
 
-    Hereda `text` e `is_correct` de `AnswerOption` (src/schemas/exam.py).
+    Inherits `text` and `is_correct` from `AnswerOption` (src/schemas/exam.py).
     """
 
     model_config = ConfigDict(extra="forbid")
 
 
-class GuardarPreguntaInput(_StrictModel):
-    """Input de `guardar_pregunta`.
+class SaveQuestionInput(_StrictModel):
+    """Input of `save_question`.
 
-    Valida contra los enums del dominio: el LLM no puede guardar
-    `bloom_level="facilísimo"` ni opciones sin exactamente una correcta
-    (para opcion_multiple) — mismas reglas que `GeneratedItem`.
+    Validates against the domain enums: the LLM cannot save
+    `bloom_level="super_hard"` nor options without exactly one correct one
+    (for multiple_choice) — same rules as `GeneratedItem`.
     """
 
-    subject_id: str = Field(..., description="Id de la materia (UUID)")
+    subject_id: str = Field(..., description="Subject id (UUID)")
     topic: str = Field(..., description=_TOPIC_DESC)
     bloom_level: str = Field(
         ...,
         description=(
-            "Nivel de Bloom: 'recordar', 'comprender', 'aplicar', "
-            "'analizar', 'evaluar' o 'crear'"
+            "Bloom level: 'remember', 'understand', 'apply', "
+            "'analyze', 'evaluate' or 'create'"
         ),
     )
     difficulty: Difficulty = Field(..., description=_DIFFICULTY_DESC)
-    question_text: str = Field(..., min_length=5, description="Enunciado de la pregunta")
+    question_text: str = Field(..., min_length=5, description="Question statement")
     question_type: QuestionType = Field(
         ...,
         description=(
-            "Tipo: 'opcion_multiple', 'verdadero_falso', 'respuesta_corta', "
-            "'desarrollo', 'relleno' o 'todas_correctas'"
+            "Type: 'multiple_choice', 'true_false', 'short_answer', "
+            "'essay', 'fill_in_blank' or 'select_all'"
         ),
     )
     options: list[AnswerOptionIn] | None = Field(
         default=None,
         description=(
-            "Opciones (solo opcion_multiple/verdadero_falso/todas_correctas). "
-            "Cada una: {'text': str, 'is_correct': bool}"
+            "Options (only multiple_choice/true_false/select_all). "
+            "Each one: {'text': str, 'is_correct': bool}"
         ),
     )
     expected_answer: str | None = Field(
-        default=None, description="Respuesta esperada o solución de referencia"
+        default=None, description="Expected answer or reference solution"
     )
     solution_explanation: str | None = Field(
-        default=None, description="Justificación / solución paso a paso"
+        default=None, description="Justification / step-by-step solution"
     )
-    subtopic: str | None = Field(default=None, description="Subtema opcional")
-    points: float = Field(default=1.0, gt=0, le=100, description="Puntaje (> 0)")
+    subtopic: str | None = Field(default=None, description="Optional subtopic")
+    points: float = Field(default=1.0, gt=0, le=100, description="Score (> 0)")
 
     def to_review_dict(self) -> dict:
-        """Dict plano para `review_question` (verificador IA)."""
+        """Flat dict for `review_question` (AI verifier)."""
         return {
             "topic": self.topic,
             "bloom_level": self.bloom_level,
@@ -221,83 +220,83 @@ class GuardarPreguntaInput(_StrictModel):
         }
 
 
-class GuardarPreguntaPendienteInput(_StrictModel):
-    """Input de `guardar_pregunta_pendiente`."""
+class SavePendingQuestionInput(_StrictModel):
+    """Input of `save_pending_question`."""
 
-    verificar_humano: bool = Field(
+    verify_human: bool = Field(
         default=False,
         description=(
-            "True solo si el profesor confirmó explícitamente marcar la "
-            "pregunta como verificada por humano"
+            "True only if the professor explicitly confirmed marking the "
+            "question as verified by human"
         ),
     )
 
 
-class ConfirmarVerificacionInput(_StrictModel):
-    """Input de `confirmar_verificacion_humana`."""
+class ConfirmVerificationInput(_StrictModel):
+    """Input of `confirm_human_verification`."""
 
-    question_id: str = Field(..., description="Id (UUID) de la pregunta a verificar")
+    question_id: str = Field(..., description="Id (UUID) of the question to verify")
 
 
 # ---------------------------------------------------------------------------
-# Exámenes
+# Exams
 # ---------------------------------------------------------------------------
-class GenerarExamenPdfInput(_StrictModel):
-    """Input de `generar_examen_pdf`."""
+class GenerateExamPdfInput(_StrictModel):
+    """Input of `generate_exam_pdf`."""
 
-    subject_id: str = Field(..., description="Id de la materia (UUID)")
-    subject_name: str = Field(..., description="Nombre de la materia")
+    subject_id: str = Field(..., description="Subject id (UUID)")
+    subject_name: str = Field(..., description="Name of the subject")
     total_questions: int = Field(
-        default=5, ge=1, le=30, description="Nº de preguntas del examen (1-30)"
+        default=5, ge=1, le=30, description="Number of exam questions (1-30)"
     )
     use_bank: bool = Field(
         default=True,
-        description="True para armar el examen con preguntas YA existentes del banco",
+        description="True to build the exam with questions ALREADY in the bank",
     )
     num_versions: int = Field(
-        default=1, ge=1, le=10, description="Nº de versiones barajadas del examen (1-10)"
+        default=1, ge=1, le=10, description="Number of shuffled exam versions (1-10)"
     )
 
 
 # ---------------------------------------------------------------------------
-# Exportación del banco
+# Bank export
 # ---------------------------------------------------------------------------
-class ExportarPreguntasInput(_StrictModel):
-    """Input de `exportar_preguntas`."""
+class ExportQuestionsInput(_StrictModel):
+    """Input of `export_questions`."""
 
-    subject_id: str = Field(..., description="Id de la materia (UUID)")
-    formato: str = Field(
+    subject_id: str = Field(..., description="Subject id (UUID)")
+    format: str = Field(
         default="csv",
-        description="Formato del archivo de exportación: 'csv' o 'xlsx' (Excel)",
+        description="Export file format: 'csv' or 'xlsx' (Excel)",
     )
     topic: str | None = Field(
-        default=None, description="Filtro opcional por tema exacto"
+        default=None, description="Optional filter by exact topic"
     )
     limit: int = Field(
-        default=100, ge=1, le=500, description="Nº máximo de preguntas a exportar (1-500)"
+        default=100, ge=1, le=500, description="Max number of questions to export (1-500)"
     )
 
 
 # ---------------------------------------------------------------------------
-# Material y materias
+# Material and subjects
 # ---------------------------------------------------------------------------
-class AgregarMaterialArchivoInput(_StrictModel):
-    """Input de `agregar_material_archivo`."""
+class AddMaterialFileInput(_StrictModel):
+    """Input of `add_material_file`."""
 
     file_id: str = Field(
-        ..., description="Id del archivo adjunto en Open WebUI (tag <file id='...'/> )"
+        ..., description="Id of the file attached in Open WebUI (tag <file id='...'/> )"
     )
-    subject_id: str = Field(..., description="Id de la materia (UUID)")
-    subject_name: str = Field(..., description="Nombre de la materia")
+    subject_id: str = Field(..., description="Subject id (UUID)")
+    subject_name: str = Field(..., description="Name of the subject")
     clear_previous: bool = Field(
         default=False,
-        description="True para reemplazar el material previo de ese archivo",
+        description="True to replace the previous material of that file",
     )
 
 
-class RegistrarMateriaInput(_StrictModel):
-    """Input de `registrar_materia`."""
+class RegisterSubjectInput(_StrictModel):
+    """Input of `register_subject`."""
 
-    nombre: str = Field(
-        ..., min_length=1, max_length=120, description="Nombre de la materia a registrar"
+    name: str = Field(
+        ..., min_length=1, max_length=120, description="Name of the subject to register"
     )

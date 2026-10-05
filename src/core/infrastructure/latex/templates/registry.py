@@ -11,11 +11,11 @@ class TemplateId(str, Enum):
 
 
 class ExamTemplate(BaseModel):
-    """Registro de un template de examen.
+    """Registry of an exam template.
 
-    `options` declara las opciones configurables del template (nombre →
-    descripción). Permite que una futura interfaz web genere templates
-    variando estas opciones sin tocar el archivo LaTeX.
+    `options` declares the configurable options of the template (name →
+    description). Allows a future web interface to generate templates
+    varying these options without touching the LaTeX file.
     """
     id: TemplateId
     file: str
@@ -23,7 +23,7 @@ class ExamTemplate(BaseModel):
     supports_answer_key: bool = True
     options: dict[str, str] = Field(
         default_factory=dict,
-        description="Opciones configurables: {nombre_la_tex: descripción}",
+        description="Configurable options: {latex_name: description}",
     )
 
 
@@ -31,23 +31,23 @@ TEMPLATE_REGISTRY: dict[TemplateId, ExamTemplate] = {
     TemplateId.BASE_EXAM: ExamTemplate(
         id=TemplateId.BASE_EXAM,
         file="base_exam.tex.jinja",
-        description="Examen estándar a una columna, con tabla de calificación y clave de respuestas",
+        description="Standard single-column exam, with grading table and answer key",
         options={
-            "print_answers": "Mostrar las respuestas en el mismo documento",
-            "show_grading_table": "Mostrar la tabla de calificación",
-            "boxed_points": "Encerrar los puntos en un recuadro",
-            "include_cover": "Incluir la portada (departamento, materia, fecha)",
-            "num_versions": "Nº de versiones barajadas (estilo AMC)",
+            "print_answers": "Show the answers in the same document",
+            "show_grading_table": "Show the grading table",
+            "boxed_points": "Enclose the points in a box",
+            "include_cover": "Include the cover (department, subject, date)",
+            "num_versions": "Number of shuffled versions (AMC style)",
         },
     ),
     TemplateId.QUIZ_SHORT: ExamTemplate(
         id=TemplateId.QUIZ_SHORT,
         file="quiz_short.tex.jinja",
-        description="Quiz corto de 1-2 páginas, sin clave de respuestas",
+        description="Short 1-2 page quiz, without answer key",
         supports_answer_key=False,
         options={
-            "print_answers": "Mostrar las respuestas (aunque el quiz normalmente no)",
-            "include_cover": "Incluir la portada",
+            "print_answers": "Show the answers (although the quiz usually does not)",
+            "include_cover": "Include the cover",
         },
     ),
 }
