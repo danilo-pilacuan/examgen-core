@@ -1,0 +1,33 @@
+\documentclass[addpoints,11pt]{exam}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[none]{hyphenat}
+\usepackage[margin=2cm]{geometry}
+
+% --- Quiz corto: sin clave de respuestas (supports_answer_key=False) ---
+\newcommand{\examdept}[1]{\noindent\textbf{#1}\par}
+\newcommand{\examclass}[1]{\noindent\textbf{#1}\par}
+\newcommand{\examdatetime}[3]{\noindent#1 \quad #2 \quad (#3)\par}
+\newcommand{\examinstructions}[1]{\vspace{4mm}\noindent#1\par}
+
+\pagestyle{headandfoot}
+\firstpageheader{}{ {{ subject_name }} }{}
+\firstpageheadrule
+\footer{}{}{{\bf Página \thepage\ de \numpages}}
+\firstpagefooter{Nombre: \makebox[5cm]{\hrulefill}}{}{}
+
+\noprintanswers
+
+\begin{document}
+
+\examdept{ {{ department }} }
+\examclass{ {{ subject_name }} }
+\examdatetime{ {{ exam_date }} }{ {{ exam_time }} }{ {{ duration }} }
+\examinstructions{ {{ instructions }} }
+
+\begin{questions}
+{{ questions_block }}
+\end{questions}
+
+\end{document}

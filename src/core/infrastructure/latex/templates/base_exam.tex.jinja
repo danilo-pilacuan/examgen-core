@@ -1,0 +1,43 @@
+\documentclass[addpoints,12pt]{exam}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[none]{hyphenat}
+\usepackage[margin=2.5cm]{geometry}
+
+% --- Coversheet: macros propias, sin depender de paquetes institucionales externos ---
+\newcommand{\examdept}[1]{\noindent\textbf{#1}\par}
+\newcommand{\examclass}[1]{\noindent\textbf{#1}\par}
+\newcommand{\examdatetime}[3]{\noindent#1 \quad #2 \quad (#3)\par}
+\newcommand{\examinstructions}[1]{\vspace{5mm}\noindent#1\par}
+\newcommand{\examsig}[1]{\vspace{1cm}\noindent\textit{#1}}
+
+\pagestyle{headandfoot}
+\firstpageheader{}{ {{ subject_name }} }{}
+\firstpageheadrule
+\footer{}{\iflastpage{}{\bf PLEASE TURN OVER}}{\bf Página \thepage\ de \numpages}
+\firstpagefooter{Nombre: \makebox[6cm]{\hrulefill}}{}{}
+
+\unframedsolutions
+\renewcommand{\solutiontitle}{\noindent\textbf{Solución:}\par\noindent}
+{% if print_answers %}\printanswers{% else %}\noprintanswers{% endif %}
+{% if boxed_points %}\boxedpoints{% endif %}
+
+\begin{document}
+
+{% if include_cover %}
+\examdept{ {{ department }} }
+\examclass{ {{ subject_name }} }
+\examdatetime{ {{ exam_date }} }{ {{ exam_time }} }{ {{ duration }} }
+\examinstructions{ {{ instructions }} }
+{% endif %}
+
+{% if show_grading_table %}\gradetable[h][questions]{% endif %}
+
+\begin{questions}
+{{ questions_block }}
+\end{questions}
+
+{% if include_cover %}\examsig{ {{ examiner_name }} }{% endif %}
+
+\end{document}
