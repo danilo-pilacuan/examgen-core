@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 def _extract_pdf(path: str) -> str:
-    """Extrae texto de un PDF con PyMuPDF."""
+    """Extracts text from a PDF with PyMuPDF."""
     import fitz  # pymupdf
 
     doc = fitz.open(path)
@@ -42,7 +42,7 @@ def _extract_docx(path: str) -> str:
 
 
 def _extract_pptx(path: str) -> str:
-    """Extrae texto de un .pptx (texto de cada shape en cada slide)."""
+    """Extracts text from a .pptx (text of each shape in each slide)."""
     from pptx import Presentation
 
     prs = Presentation(path)
@@ -72,7 +72,7 @@ def _extract_xlsx(path: str) -> str:
     wb = load_workbook(path, read_only=True, data_only=True)
     parts = []
     for ws in wb.worksheets:
-        sheet_parts = [f"--- Hoja: {ws.title} ---"]
+        sheet_parts = [f"--- Sheet: {ws.title} ---"]
         for row in ws.iter_rows(values_only=True):
             cells = [str(c).strip() for c in row if c is not None and str(c).strip()]
             if cells:
@@ -84,7 +84,7 @@ def _extract_xlsx(path: str) -> str:
 
 
 def _extract_text_file(path: str) -> str:
-    """Extrae texto de un archivo de texto plano (.txt, .md, etc.)."""
+    """Extracts text from a plain text file (.txt, .md, etc.)."""
     with open(path, encoding="utf-8", errors="ignore") as f:
         return f.read().strip()
 

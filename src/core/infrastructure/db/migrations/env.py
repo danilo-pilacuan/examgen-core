@@ -7,7 +7,7 @@ from core.domain.models import Base
 
 config = context.config
 
-# Sobrescribe el placeholder de alembic.ini con la URL real desde .env
+# Overrides the alembic.ini placeholder with the real URL from .env
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
 if config.config_file_name is not None:

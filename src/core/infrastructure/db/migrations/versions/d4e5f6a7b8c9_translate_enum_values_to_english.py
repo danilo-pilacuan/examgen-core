@@ -5,7 +5,9 @@ Revises: c3d4e5f6a7b8
 Create Date: 2026-10-05
 
 Translates persisted enum values in `generated_questions` to the new
-English contract (stage 7 of the i18n plan):
+English contract (stage 7 of the i18n plan). The Spanish values below are
+the OLD data values being migrated (they must stay as-is to match the
+existing rows):
   - bloom_level: recordar→remember, comprender→understand, aplicar→apply,
     analizar→analyze, evaluar→evaluate, crear→create
   - difficulty: facil→easy, medio→medium, dificil→hard
@@ -28,6 +30,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 _BLOOM_MAP = [
+    # (old Spanish value in DB, new English value) — data migration, not code
     ('recordar', 'remember'),
     ('comprender', 'understand'),
     ('aplicar', 'apply'),
@@ -76,7 +79,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Downgrade schema (restore Spanish values)."""
+    """Downgrade schema (restore the old Spanish data values)."""
     _translate('generated_questions', 'bloom_level', [(n, o) for o, n in _BLOOM_MAP])
     _translate('generated_questions', 'difficulty', [(n, o) for o, n in _DIFFICULTY_MAP])
     _translate('generated_questions', 'question_type', [(n, o) for o, n in _QUESTION_TYPE_MAP])

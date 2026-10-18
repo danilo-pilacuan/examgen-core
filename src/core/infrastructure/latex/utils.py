@@ -56,13 +56,13 @@ def build_exam_versions(
     for v in range(num_versions):
         rng = random.Random(seed + v if seed is not None else None)
 
-        # Barajar las opciones de cada pregunta.
+        # Shuffle the options of each question.
         version_items = [
             shuffle_question(it, rng) if shuffle_options else deepcopy(it)
             for it in items
         ]
 
-        # Barajar el orden de las preguntas.
+        # Shuffle the order of the questions.
         if shuffle_questions:
             rng.shuffle(version_items)
 
@@ -92,7 +92,7 @@ def render_item(item: GeneratedItem) -> str:
         )
         block = (
             f"\\question[{item.points:g}] {statement}\n"
-            f"\\textbf{{Marque todas las opciones correctas.}}\n"
+            f"\\textbf{{Mark all correct options.}}\n"
             f"\\begin{{checkboxes}}\n{choices}\n\\end{{checkboxes}}\n"
         )
     elif item.question_type in (QuestionType.MULTIPLE_CHOICE, QuestionType.TRUE_FALSE):

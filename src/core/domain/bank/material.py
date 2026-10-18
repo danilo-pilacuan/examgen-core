@@ -32,8 +32,8 @@ from core.infrastructure.files.extract import (
     _extract_text_file,
 )
 
-CHUNK_SIZE = 1500   # caracteres por chunk
-CHUNK_OVERLAP = 150  # solapamiento para no cortar ideas
+CHUNK_SIZE = 1500   # characters per chunk
+CHUNK_OVERLAP = 150  # overlap so ideas are not cut mid-way
 
 # Root directory of the subjects' material. Resolved by env var
 # (MATERIAL_ROOT) or defaults to `data/inputs` relative to the repo root.
@@ -79,8 +79,8 @@ def save_file_to_subject_folder(
     folder = material_root() / subject_folder_name(subject_name)
     folder.mkdir(parents=True, exist_ok=True)
 
-    # Nombre de archivo seguro.
-    safe_name = Path(filename).name or "archivo"
+    # Safe file name.
+    safe_name = Path(filename).name or "file"
     dest = folder / safe_name
     # Avoid overwriting: add a suffix if it already exists.
     if dest.exists():
@@ -95,7 +95,7 @@ def save_file_to_subject_folder(
 
 
 def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Divide un texto en chunks con solapamiento."""
+    """Splits a text into chunks with overlap."""
     text = text.strip()
     if not text:
         return []
@@ -126,7 +126,7 @@ def extract_file_text(path: str | Path) -> str:
 
 
 def get_or_create_subject(name: str, subject_id: str | None = None) -> Subject:
-    """Obtiene una materia por id/name, o la crea si no existe."""
+    """Gets a subject by id/name, or creates it if it does not exist."""
     db = SessionLocal()
     try:
         if subject_id:
@@ -151,13 +151,13 @@ def index_text_for_subject(
     source_label: str,
     clear_previous: bool = False,
 ) -> dict:
-    """Indexa un texto (material) en `material_chunks` de una materia.
+    """Indexes a text (material) into a subject's `material_chunks`.
 
     Args:
         text: material content (already extracted).
-        subject_id: id de la materia destino.
-        source_label: etiqueta de origen (ej. nombre del archivo).
-        clear_previous: si True, borra los chunks previos de esa fuente.
+        subject_id: id of the target subject.
+        source_label: source label (e.g. file name).
+        clear_previous: if True, deletes the previous chunks of that source.
 
     Returns:
         dict with stats (chunks_saved, subject, etc.).
@@ -166,7 +166,7 @@ def index_text_for_subject(
     if not chunks:
         return {"chunks_saved": 0, "message": "Could not extract text from the material."}
 
-    # Generar embeddings en lotes.
+    # Generate embeddings in batches.
     vectors: list[list[float]] = []
     batch = 16
     for i in range(0, len(chunks), batch):
@@ -209,7 +209,7 @@ def index_file_for_subject(
     subject_id: str,
     clear_previous: bool = False,
 ) -> dict:
-    """Extrae e indexa un archivo local en la materia destino."""
+    """Extracts and indexes a local file into the target subject."""
     file_path = Path(file_path)
     if not file_path.exists():
         return {"chunks_saved": 0, "message": f"File does not exist: {file_path}"}

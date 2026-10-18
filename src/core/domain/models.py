@@ -23,7 +23,7 @@ class SyllabusTopic(Base):
     weight: Mapped[float] = mapped_column(default=1.0)
 
 class MaterialChunk(Base):
-    """Fragmento del material de una materia, con su embedding (para RAG)."""
+    """Chunk of a subject's material, with its embedding (for RAG)."""
     __tablename__ = "material_chunks"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     subject_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("subjects.id"))

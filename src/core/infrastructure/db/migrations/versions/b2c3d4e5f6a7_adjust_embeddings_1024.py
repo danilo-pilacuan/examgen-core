@@ -19,7 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema: cambia las columnas embedding a vector(1024) (bge-m3)."""
+    """Upgrade schema: changes the embedding columns to vector(1024) (bge-m3)."""
     op.alter_column(
         'generated_questions',
         'embedding',
