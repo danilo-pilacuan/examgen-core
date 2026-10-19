@@ -238,6 +238,57 @@ class ConfirmVerificationInput(_StrictModel):
     question_id: str = Field(..., description="Id (UUID) of the question to verify")
 
 
+class DeleteQuestionInput(_StrictModel):
+    """Input of `delete_question`."""
+
+    question_id: str = Field(..., description="Id (UUID) of the question to delete")
+
+
+class UpdateQuestionInput(_StrictModel):
+    """Input of `update_question`.
+
+    All fields optional: only the provided ones are updated. The LLM cannot
+    update unknown fields (the service layer rejects them) nor touch
+    human-verified questions (guardrail in `core.domain.bank.service`).
+    """
+
+    question_id: str = Field(..., description="Id (UUID) of the question to update")
+    topic: str | None = Field(default=None, description=_TOPIC_DESC)
+    subtopic: str | None = Field(default=None, description="Optional subtopic")
+    bloom_level: str | None = Field(
+        default=None,
+        description=(
+            "Bloom level: 'remember', 'understand', 'apply', "
+            "'analyze', 'evaluate' or 'create'"
+        ),
+    )
+    difficulty: Difficulty | None = Field(default=None, description=_DIFFICULTY_DESC)
+    question_type: QuestionType | None = Field(
+        default=None,
+        description=(
+            "Type: 'multiple_choice', 'true_false', 'short_answer', "
+            "'essay', 'fill_in_blank' or 'select_all'"
+        ),
+    )
+    question_text: str | None = Field(
+        default=None, min_length=5, description="New question statement"
+    )
+    options: list[AnswerOptionIn] | None = Field(
+        default=None,
+        description=(
+            "New options (only multiple_choice/true_false/select_all). "
+            "Each one: {'text': str, 'is_correct': bool}"
+        ),
+    )
+    expected_answer: str | None = Field(
+        default=None, description="New expected answer or reference solution"
+    )
+    solution_explanation: str | None = Field(
+        default=None, description="New justification / step-by-step solution"
+    )
+    points: float | None = Field(default=None, gt=0, le=100, description="New score (> 0)")
+
+
 # ---------------------------------------------------------------------------
 # Exams
 # ---------------------------------------------------------------------------
@@ -300,3 +351,9 @@ class RegisterSubjectInput(_StrictModel):
     name: str = Field(
         ..., min_length=1, max_length=120, description="Name of the subject to register"
     )
+
+
+class SelectSubjectInput(_StrictModel):
+    """Input of `select_subject`."""
+
+    subject_id: str = Field(..., description="Subject id (UUID) to make active")
