@@ -91,3 +91,22 @@ class LLMResponse(Base):
     raw_thinking: Mapped[str | None] = mapped_column(Text, nullable=True)
     latency_ms: Mapped[int | None] = mapped_column(nullable=True)
     created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
+
+class Exam(Base):
+    """A generated exam package (persisted for the Exams view).
+
+    One row per exam generation: the blueprint, the approved items, the
+    artifact file names (PDFs with/without answers and the ZIP) and the
+    human-readable name the professor requested.
+    """
+    __tablename__ = "exams"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    subject_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("subjects.id"))
+    name: Mapped[str] = mapped_column(String(200))  # professor-requested name
+    blueprint: Mapped[dict] = mapped_column(JSON)
+    items: Mapped[list] = mapped_column(JSON)
+    num_versions: Mapped[int] = mapped_column(default=1)
+    pdf_paths: Mapped[list] = mapped_column(JSON)  # file names in /output
+    zip_path: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(50), nullable=True)  # chat|exams-view
+    created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())

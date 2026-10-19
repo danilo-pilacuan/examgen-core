@@ -104,6 +104,14 @@ class RetrievalConfig(BaseModel):
 class ExamMetadata(BaseModel):
     """Exam metadata (for experimentation and traceability)."""
     title: str = Field(default="", description="Exam title, e.g. Midterm Exam")
+    name: str = Field(
+        default="",
+        description=(
+            "Human-readable exam name requested by the professor (e.g. "
+            "'Midterm 1'). Used for the artifact file names "
+            "(<name>_A.pdf, <name>_A_respondido.pdf, <name>.zip)."
+        ),
+    )
     instructions: str = Field(default="", description="Instructions for the student")
     model: str = Field(default="", description="LLM model used")
     temperature: float | None = Field(default=None, ge=0, le=2)

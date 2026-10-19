@@ -329,6 +329,14 @@ class GenerateExamPdfInput(_StrictModel):
     num_versions: int = Field(
         default=1, ge=1, le=10, description="Number of shuffled exam versions (1-10)"
     )
+    exam_name: str = Field(
+        default="",
+        max_length=120,
+        description=(
+            "Human-readable name of the exam requested by the professor "
+            "(e.g. 'Midterm 1'). Used for the artifact file names."
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
