@@ -141,6 +141,28 @@ class ListMaterialInput(_StrictModel):
     subject_id: str = Field(..., description="Subject id (UUID)")
 
 
+class DeleteMaterialFileInput(_StrictModel):
+    """Input of `delete_material_file`."""
+
+    subject_id: str = Field(..., description="Subject id (UUID)")
+    source_file: str = Field(
+        ...,
+        min_length=1,
+        max_length=500,
+        description=(
+            "Exact source file to delete (get it from `list_subject_material`; "
+            "never invent it)"
+        ),
+    )
+    delete_physical_file: bool = Field(
+        default=True,
+        description=(
+            "True to also delete the physical file from the subject's material "
+            "folder (when it exists)"
+        ),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Question generation / saving
 # ---------------------------------------------------------------------------
@@ -318,7 +340,7 @@ class ExportQuestionsInput(_StrictModel):
     subject_id: str = Field(..., description="Subject id (UUID)")
     format: str = Field(
         default="csv",
-        description="Export file format: 'csv' or 'xlsx' (Excel)",
+        description="Export file format: 'csv', 'xlsx' (Excel) or 'json' (raw data)",
     )
     topic: str | None = Field(
         default=None, description="Optional filter by exact topic"

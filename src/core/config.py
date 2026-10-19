@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     max_total_llm_calls: int = 200
     max_compilation_attempts: int = 3
 
+    # --- LLM raw audit (llm_responses table) ---
+    # Master switch: always store prompt + raw answer of every LLM call.
+    llm_capture_raw: bool = True
+    # Store the full chain of thought (raw thinking) as well. Off by default:
+    # it depends on the server returning the reasoning trace.
+    llm_capture_thinking: bool = False
+
     # --- Open WebUI (to upload PDFs as native chat attachments) ---
     openwebui_url: str = "http://localhost:3000"  # internal URL (Docker network)
     openwebui_public_url: str = "http://localhost:3000"  # public URL (browser)

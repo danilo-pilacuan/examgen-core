@@ -74,3 +74,20 @@ class GeneratedQuestion(Base):
     # --- Provenance and audit ---
     source: Mapped[str | None] = mapped_column(String(50), nullable=True)  # generated|bank
     created_by: Mapped[str | None] = mapped_column(String(100), nullable=True)  # "agent"|"human"|"chat"
+
+class LLMResponse(Base):
+    """Audit record of one LLM call (raw prompt/answer, optional thinking).
+
+    Written best-effort by `core.domain.llm_log.service`: a logging failure
+    must never break the chat or the pipeline.
+    """
+    __tablename__ = "llm_responses"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    thread_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    context: Mapped[str] = mapped_column(String(100))  # chat:model | chat:generate_question | pipeline:generator ...
+    model: Mapped[str] = mapped_column(String(200))
+    prompt: Mapped[str] = mapped_column(Text)
+    raw_answer: Mapped[str] = mapped_column(Text)
+    raw_thinking: Mapped[str | None] = mapped_column(Text, nullable=True)
+    latency_ms: Mapped[int | None] = mapped_column(nullable=True)
+    created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
