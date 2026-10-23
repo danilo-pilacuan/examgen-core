@@ -5,11 +5,15 @@ class Settings(BaseSettings):
 
     database_url: str
     latex_compiler_url: str
-    openai_api_key: str = "no-key"  # placeholder; local infra doesn't validate real keys
+    openai_api_key: str = "no-key"  # required by the USFQ gateway (Bearer auth)
+    # JWT signing secret for professor authentication (multi-tenant).
+    # Read directly via os.environ in core.domain.auth; declared here so
+    # pydantic-settings does not reject AUTH_SECRET present in .env.
+    auth_secret: str = ""
 
-    # --- LLM provider (local OpenAI-compatible infra) ---
+    # --- LLM provider (USFQ gateway, OpenAI-compatible) ---
     llm_model: str = "zai-org/GLM-5.3-Flash"
-    llm_base_url: str = "http://172.28.230.10:12555/v1"
+    llm_base_url: str = "https://ai.usfq.edu.ec/api/agents/llm/main/v1"
     llm_temperature: float = 0.7
     # The vLLM server accepts up to ~100k+ output tokens (tested) and the
     # model supports 1M context (up to 131072 output tokens per its
