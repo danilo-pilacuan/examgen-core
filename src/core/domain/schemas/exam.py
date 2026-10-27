@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 import uuid
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class BloomLevel(str, Enum):
@@ -126,6 +126,9 @@ class ExamMetadata(BaseModel):
 
 class ExamBlueprint(BaseModel):
     """Output of the Planner Agent: the structure the exam must have."""
+    # BUG-018: misplaced fields (e.g. num_versions/name at the root instead
+    # of inside `metadata`) must fail validation with 422, not be ignored.
+    model_config = ConfigDict(extra="forbid")
     subject_id: str
     total_questions: int = Field(..., gt=0)
     bloom_distribution: dict[BloomLevel, float] = Field(
