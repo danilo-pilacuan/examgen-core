@@ -110,3 +110,26 @@ class Exam(Base):
     zip_path: Mapped[str | None] = mapped_column(String(300), nullable=True)
     created_by: Mapped[str | None] = mapped_column(String(50), nullable=True)  # chat|exams-view
     created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
+
+class ChatThread(Base):
+    """Server-side chat thread metadata (per-user conversation registry).
+
+    Fixes BUG-022 (no thread ownership: any authenticated user could read or
+    write another user's thread) and BUG-023 (thread list only in
+    localStorage, invisible from another browser or after clearing it).
+
+    Content still lives in the LangGraph PostgresSaver checkpointer; this
+    table holds only the listing metadata (DEC-004 option a).
+    """
+    __tablename__ = "chat_threads"
+    thread_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    # Last subject used in the conversation (badge; NULL = thread without subject).
+    last_subject_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("subjects.id"), nullable=True
+    )
+    last_subject_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    message_count: Mapped[int] = mapped_column(default=0, server_default="0")
+    created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
