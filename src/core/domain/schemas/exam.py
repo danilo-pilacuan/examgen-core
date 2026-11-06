@@ -140,6 +140,13 @@ class ExamBlueprint(BaseModel):
     topics_weight: dict[str, float] = Field(
         ..., description="Weight per syllabus topic, must sum to 1.0"
     )
+    # Question types the exam may contain (third review, Felipe): the
+    # professor restricts the mix (e.g. only multiple_choice). Defaults to
+    # all types so existing constructors keep working.
+    allowed_question_types: list[QuestionType] = Field(
+        default_factory=lambda: list(QuestionType),
+        description="Question types allowed in the exam (at least one)",
+    )
     estimated_duration_minutes: int = Field(default=90)
     retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
     metadata: ExamMetadata = Field(default_factory=ExamMetadata)
@@ -151,6 +158,14 @@ class ExamBlueprint(BaseModel):
         if not (0.98 <= total <= 1.02):  # tolerance for rounding
             raise ValueError(f"{info.field_name} must sum to ~1.0, current sum: {total}")
         return v
+
+    @field_validator("allowed_question_types")
+    @classmethod
+    def validate_allowed_types(cls, v: list[QuestionType]) -> list[QuestionType]:
+        if not v:
+            raise ValueError("allowed_question_types must contain at least one type")
+        # Deduplicate while preserving order.
+        return list(dict.fromkeys(v))
 
 
 class CompiledExam(BaseModel):
