@@ -1,4 +1,6 @@
 import uuid
+from datetime import datetime
+
 from sqlalchemy import String, Text, ForeignKey, DateTime, func, Boolean, Float, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -68,6 +70,9 @@ class GeneratedQuestion(Base):
     # --- Human and AI verification (Felipe's requirement) ---
     verified_by_human: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     verified_by_ai: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Timestamp of the most recent verification event (human or AI);
+    # NULL while the question has never been verified.
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     ai_review_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     ai_review_priority: Mapped[str | None] = mapped_column(String(20), nullable=True)  # alta|media|baja
 

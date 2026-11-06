@@ -15,6 +15,7 @@ Security rules (Felipe's requirement):
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from sqlalchemy import select
@@ -27,6 +28,11 @@ from core.domain.models import GeneratedQuestion
 class SecurityError(Exception):
     """Raised when the agent tries to modify/delete a human-verified question
     (or any other non-permitted operation)."""
+
+
+def _utcnow() -> datetime:
+    """Clock for verification timestamps (injectable seam for tests)."""
+    return datetime.now(timezone.utc)
 
 
 def _get_question(db: Session, question_id: str | uuid.UUID) -> GeneratedQuestion:
@@ -126,6 +132,9 @@ def create_question(
             ai_review_notes=ai_review_notes,
             ai_review_priority=ai_review_priority,
             verified_by_human=False,
+            # AI verification happens before persisting (verifier), so a
+            # question created with verified_by_ai=True is already verified.
+            verified_at=_utcnow() if verified_by_ai else None,
         )
         db.add(q)
         db.commit()
@@ -205,6 +214,9 @@ def set_human_verification(
     try:
         q = _get_question(db, question_id)
         q.verified_by_human = verified
+        # Verification timestamp: set on every human verification event,
+        # cleared when the verification is removed.
+        q.verified_at = _utcnow() if verified else None
         db.commit()
         db.refresh(q)
         return q
